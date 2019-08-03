@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 // Просто для себе, зі зміною розміру і букв - LesApp2
 
-namespace LesApp1
+namespace LesApp2
 {
     class Program
     {
@@ -48,7 +48,7 @@ namespace LesApp1
         static void Main()
         {
             // Заголовок
-            Console.Title = "Matrix - developed by Pinchuk Bogdan";
+            Console.Title = "Matrix";
 
             // Join Unicode
             Console.OutputEncoding = Encoding.Unicode;
@@ -56,12 +56,6 @@ namespace LesApp1
             // вимкнення курсора
             Console.CursorVisible = false;
 
-            // устновка розмірів консолі
-#if false
-            Console.SetWindowSize(50, 30); //150 30
-            rowM = Console.WindowHeight;
-            colM = Console.WindowWidth; 
-#endif
             // безкінечний цикл із первіркою потоків
             while (true)
             {
