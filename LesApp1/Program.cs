@@ -12,19 +12,19 @@ namespace LesApp1
         /// <summary>
         /// Кількість рядків
         /// </summary>
-        private static int rowM = Console.WindowHeight;
+        private static readonly int rowM = Console.WindowHeight;
         /// <summary>
         /// Кількість колонок
         /// </summary>
-        private static int colM = Console.WindowWidth;
+        private static readonly int colM = Console.WindowWidth;
         /// <summary>
         /// Набір символів для виведення (рандомно)
         /// </summary>
-        private static string arrayData = "PinchukBohdanYuriyovych";
+        private static readonly string arrayData = "PinchukBohdanYuriyovych";
         /// <summary>
         ///  Масив даних для виведення цілими словами
         /// </summary>
-        private static string[] arrayI = new string[]
+        private static readonly string[] arrayI = new string[]
         {
             "Pinchuk",
             "Bohdan",
@@ -33,11 +33,11 @@ namespace LesApp1
         /// <summary>
         /// Випадкові значення
         /// </summary>
-        private Random rnd = new Random();
+        private readonly Random rnd = new Random();
         /// <summary>
         /// Блокування консолі
         /// </summary>
-        private static object block = new object();
+        private static readonly object block = new object();
 
         static void Main()
         {
