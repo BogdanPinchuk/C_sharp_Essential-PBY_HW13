@@ -33,9 +33,14 @@ namespace LesApp1
             private set { iteration = value; }
         }
         /// <summary>
+        /// Зазвичай необхідна для зчитування ітерації останнього значення в масиві
+        /// </summary>
+        public int LastValue { get { return iteration; } }
+
+        /// <summary>
         /// Максимальна величиниа лічильника
         /// </summary>
-        public int MaxSize { get; private set; }
+        public int MaxSize { get; set; }
 
         /// <summary>
         /// конструктор який встановлює мінімальний розмір
@@ -60,7 +65,7 @@ namespace LesApp1
             {
                 Color = ConsoleColor.White;
             }
-            else if (iteration == -1)
+            else if (iteration == -1 || iteration == -2)    // так наче краще якщо не 1 а дві букви (в фільмі матриця там зі зменшенням інтенсивності)
             {
                 Color = ConsoleColor.Green;
             }

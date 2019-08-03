@@ -7,20 +7,21 @@ using System.Threading.Tasks;
 
 namespace LesApp1
 {
+    /// <summary>
+    /// Зміна розмірів консолі
+    /// </summary>
+    delegate void ChangeSizeConsole();
+
     class Program
     {
         /// <summary>
         /// Кількість рядків
         /// </summary>
-        private static readonly int rowM = Console.WindowHeight;
+        private static int rowM = Console.WindowHeight;
         /// <summary>
         /// Кількість колонок
         /// </summary>
-        private static readonly int colM = Console.WindowWidth;
-        /// <summary>
-        /// Набір символів для виведення (рандомно)
-        /// </summary>
-        private static readonly string arrayData = "PinchukBohdanYuriyovych";
+        private static int colM = Console.WindowWidth;
         /// <summary>
         ///  Масив даних для виведення цілими словами
         /// </summary>
@@ -31,38 +32,59 @@ namespace LesApp1
             "Yuriyovych"
         };
         /// <summary>
+        /// Відсилака до фільму Матриця
+        /// </summary>
+        private static readonly string matrix = "Matrix";
+        /// <summary>
         /// Випадкові значення
         /// </summary>
-        private readonly Random rnd = new Random();
+        private static Random rnd = new Random();
         /// <summary>
         /// Блокування консолі
         /// </summary>
-        private static readonly object block = new object();
+        public static readonly object block = new object();
+        /// <summary>
+        /// створення колекції 
+        /// </summary>
+        private static List<int> list = new List<int>();
 
         static void Main()
         {
             // Заголовок
-            Console.Title = "Matrix";
+            Console.Title = "Matrix - developed by Pinchuk Bogdan";
 
             // Join Unicode
             Console.OutputEncoding = Encoding.Unicode;
 
-            #region testing
-            /*
-            Counter count = new Counter(10, 0);
+            // вимкнення курсора
+            Console.CursorVisible = false;
 
+            // устновка розмірів консолі
+#if false
+            Console.SetWindowSize(50, 30); //150 30
+            rowM = Console.WindowHeight;
+            colM = Console.WindowWidth; 
+#endif
+            // безкінечний цикл із первіркою потоків
             while (true)
             {
-                Console.WriteLine(count.Iteration);
-                Thread.Sleep(50);
-            }
-            */
-            #endregion
-
-            for (int i = 0; i < colM; i++)
-            {
-                new Thread(() => RainWords(arrayI[1], i)).Start();
-                Thread.Sleep(500);
+                // перевіряємо чи не зайняті всі стовбці + обмежуємо їх кількість 
+                if (list.Count < colM)
+                {
+                    // створення потоків і запуск
+                    new Thread(() => RainWords(arrayI[rnd.Next(0, arrayI.Length)], ChangeValue.RandomValue(0, colM, ref list))).Start();
+                    Thread.Sleep(100);
+                }
+                // оновлюємо розміри, згідно розмірів вікна
+                if (UpdateSize())
+                {
+                    // якщо була зміна розміру
+                    lock (block)
+                    {
+                        // очистка - убирає артефакти після зміни розмірів екрану
+                        Console.Clear();
+                    }
+                }
             }
 
             // Repeat
@@ -76,51 +98,108 @@ namespace LesApp1
         /// <param name="col">номер колонки падіння</param>
         private static void RainWords(string word, int col)
         {
+            // для оптимізації + пропуск для очищення за собою
+            word += " ";
+
             // створення лічильника для кожної букви слова
-            Counter[] counter = new Counter[word.Length + 1];
+            Counter[] counter = new Counter[word.Length];
 
             // налаштування лічильників слова
             for (int i = 0; i < counter.Length; i++)
             {
                 // установка початкових значень лічильника (-1 для рядків, бо уходить за межі і губиться одна буква)
-                counter[i] = new Counter(rowM - 1, -i);
-                // Останній для закреслення
+                counter[i] = new Counter(rowM + word.Length, -i);
             }
 
             // безкінечний цикл, пускаємо по кругу слово згори в низ
             while (true)
             {
-                // пробіжка по всьому слову
-                for (int i = 0; i < word.Length + 1; i++)
+                // перевірка внутрішнього лічильника
+                if (counter[0].MaxSize - word.Length != rowM)
                 {
-                    // блокування доступу до виводу в консоль
-                    lock (block)
+                    // оновлення лічильників
+                    UpdateCounter();
+                }
+
+                lock (block)
+                {
+                    // пробіжка по всьому слову
+                    for (int i = 0; i < word.Length; i++)
                     {
                         int j = counter[i].Iteration;
-                        // запис символа пвного кольору у відповідній позиції
-                        if (j >= 0)
+                        // запис символа певного кольору у відповідній позиції / -1 - щоб не глючило через повзунок зліва
+                        if (0 < j && j < rowM - 1)
                         {
                             Console.ForegroundColor = counter[i].Color;
-                            Console.SetCursorPosition(col, j);
-
-                            // перевірка довжини слова, якщо іретація більша довжини 
-                            // то пишемо пробіл
-                            if (i < word.Length)
+                            // якщо змінюється ширина вікна, то ловимо помилку і убиваємо процес
+                            try
                             {
+                                Console.SetCursorPosition(col, j);
                                 Console.Write(word[i]);
                             }
-                            else
+                            catch (ArgumentOutOfRangeException)
                             {
-                                Console.Write(" ");
+                                // чистимо місце в списку (блокування зроблено вище)
+                                list.Remove(col);
+
+                                // вбиваємо потік - що і буде варіантом виходу
+                                Thread.CurrentThread.Abort();
                             }
                         }
-
                     }
                 }
-                Thread.Sleep(50);
+                Thread.Sleep(75);
+
+                // якщо дойшов до кінця і повністю сховався то вбиваємо потік
+                if (counter.Last().LastValue > rowM)
+                {
+                    // блокуємо колекцію і видаляємо номер
+                    lock (block)
+                    {
+                        // чистимо місце в списку
+                        list.Remove(col);
+                    }
+
+                    // зупиняємо потік
+                    Thread.Sleep(500);
+
+                    // вбиваємо потік - що і буде варіантом виходу
+                    Thread.CurrentThread.Abort();
+                }
+
+
+            }
+
+            // налаштування величини тыл лічильників слова
+            void UpdateCounter()
+            {
+                for (int i = 0; i < counter.Length; i++)
+                {
+                    // установка початкових значень лічильника (-1 для рядків, бо уходить за межі і губиться одна буква)
+                    counter[i].MaxSize = rowM + word.Length;
+                }
             }
         }
 
+        /// <summary>
+        /// Оновлення розмірів консолі
+        /// </summary>
+        private static bool UpdateSize()
+        {
+            // чи змінювалися розміри екрану
+            bool change = false;
+
+            // перевіряємо чи були зміни, якщо так,  то знаносимо їх і 
+            // чистимо екран, що дозволить  убрати артефакти
+            if (rowM != Console.WindowHeight || colM != Console.WindowWidth)
+            {
+                rowM = Console.WindowHeight;
+                colM = Console.WindowWidth;
+                change = true;
+            }
+
+            return change;
+        }
 
     }
 }
