@@ -24,12 +24,13 @@ namespace LesApp1
         /// </summary>
         private static readonly string[] arrayI = new string[]
         {
+            "Matrix",
             "Pinchuk",
             "Bohdan",
             "Yuriyovych"
         };
         /// <summary>
-        /// Відсилака до фільму Матриця
+        /// Матриця
         /// </summary>
         private static readonly string matrix = "Matrix";
         /// <summary>
@@ -52,9 +53,6 @@ namespace LesApp1
 
             // Join Unicode
             Console.OutputEncoding = Encoding.Unicode;
-
-            // вимкнення курсора
-            Console.CursorVisible = false;
 
             // устновка розмірів консолі
 #if false
@@ -132,6 +130,8 @@ namespace LesApp1
                             try
                             {
                                 Console.SetCursorPosition(col, j);
+                                // вимкнення курсора
+                                Console.CursorVisible = false;
                                 Console.Write(word[i]);
                             }
                             catch (ArgumentOutOfRangeException)
