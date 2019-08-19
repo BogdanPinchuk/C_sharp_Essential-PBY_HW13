@@ -62,7 +62,7 @@ namespace LesApp1
             for (int i = 0; i < colM; i++)
             {
                 new Thread(() => RainWords(arrayI[1], i)).Start();
-                Thread.Sleep(500);
+                Thread.Sleep(50);
             }
 
             // Repeat
@@ -117,7 +117,7 @@ namespace LesApp1
 
                     }
                 }
-                Thread.Sleep(50);
+                Thread.Sleep(20);
             }
         }
 
