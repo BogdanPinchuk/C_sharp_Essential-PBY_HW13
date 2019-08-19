@@ -12,7 +12,7 @@ namespace LesApp0
     class Program
     {
         // масив вибраних кольорів 
-        private static ConsoleColor[] colorArray =
+        private static readonly ConsoleColor[] colorArray =
             new ConsoleColor[Enum.GetValues(typeof(ConsoleColor)).Length];
         /// <summary>
         /// Лічильник рівня рядків консолі
@@ -21,11 +21,11 @@ namespace LesApp0
         /// <summary>
         /// Продовження виконання дії
         /// </summary>
-        private static int iterration = 80;
+        private static readonly int iterration = 80;
         /// <summary>
         /// для блокуваня доступу до консолі
         /// </summary>
-        private static object block = new object();
+        private static readonly object block = new object();
         /// <summary>
         /// Для уствновки курсора в кінець
         /// </summary>
@@ -33,7 +33,7 @@ namespace LesApp0
         /// <summary>
         /// Для рандомного часу, щоб влаштувати перегони
         /// </summary>
-        private static Random rnd = new Random();
+        private static readonly Random rnd = new Random();
 
         static void Main()
         {
@@ -44,6 +44,9 @@ namespace LesApp0
             //colorArray = new ConsoleColor[colorArray.Length];
             //counter = 0;
             colorArray[counter] = ConsoleColor.Black;
+
+            // вимкнення курсора
+            Console.CursorVisible = false;
 
             // запуск рекурсивного методу
             RecursiveMethod();

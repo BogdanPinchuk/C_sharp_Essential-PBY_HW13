@@ -5,9 +5,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-// Просто для себе, зі зміною розміру і букв - LesApp2
+// Можна було б гратися із часом/затримкою/сном щоб пустити
+// дві краплі в колонці, але можна зробити хитріше - просто 
+// в певний момент видалити значення із колекції і воно стане
+// в чергу на додавання
 
-namespace LesApp1
+// також важливо перевірити як працюватиме програма при зміні
+// розмірів консолі при розкритті на весь екран і звенренні назад
+
+namespace LesApp3
 {
     class Program
     {
@@ -20,19 +26,9 @@ namespace LesApp1
         /// </summary>
         private static int colM = Console.WindowWidth;
         /// <summary>
-        ///  Масив даних для виведення цілими словами
+        /// Набір даних
         /// </summary>
-        private static readonly string[] arrayI = new string[]
-        {
-            "Matrix",
-            "Pinchuk",
-            "Bohdan",
-            "Yuriyovych"
-        };
-        /// <summary>
-        /// Матриця
-        /// </summary>
-        private static readonly string matrix = "Matrix";
+        private static readonly string matrix = "0123456789AEIOUYBCDFGHJKLMNPQRSTVWXZ@#$%&";
         /// <summary>
         /// Випадкові значення
         /// </summary>
@@ -40,7 +36,12 @@ namespace LesApp1
         /// <summary>
         /// Блокування консолі
         /// </summary>
-        public static readonly object block = new object();
+        public static readonly object blockConsole = new object();
+        /// <summary>
+        /// Блокування рандому, якщо не поставити блокування, 
+        /// то через короткий час почнуть падати лише нулі і слова мінімального розміру
+        /// </summary>
+        public static readonly object blockRandom = new object();
         /// <summary>
         /// створення колекції 
         /// </summary>
@@ -49,32 +50,41 @@ namespace LesApp1
         static void Main()
         {
             // Заголовок
-            Console.Title = "Matrix - developed by Pinchuk Bogdan";
+            Console.Title = "Matrix";
 
             // Join Unicode
             Console.OutputEncoding = Encoding.Unicode;
 
-            // устновка розмірів консолі
-#if false
-            Console.SetWindowSize(50, 30); //150 30
-            rowM = Console.WindowHeight;
-            colM = Console.WindowWidth; 
-#endif
             // безкінечний цикл із первіркою потоків
             while (true)
             {
                 // перевіряємо чи не зайняті всі стовбці + обмежуємо їх кількість 
                 if (list.Count < colM)
                 {
+                    // для економыъ ресурсів
+                    var s = new StringBuilder();
+
+                    // величина кодового виразу
+                    lock (blockRandom)
+                    {
+                        int length = rnd.Next(3, 13);
+                        for (int i = 0; i < length; i++)
+                        {
+                            s.Append(matrix[rnd.Next(0, matrix.Length)]);
+                        }
+                    }
+
                     // створення потоків і запуск
-                    new Thread(() => RainWords(arrayI[rnd.Next(0, arrayI.Length)], ChangeValue.RandomValue(0, colM, ref list))).Start();
-                    Thread.Sleep(100);
+                    new Thread(() => RainWords(s.ToString(), ChangeValue.RandomValue(0, colM, ref list))).Start();
+                    Thread.Sleep(90); // при 80 вже помітно, але з тормозінням
+                    // адекватно працює при 100, коли затримати консоль при такій швидкості, 
+                    // то все нормально вирівнюється і не тормозить
                 }
                 // оновлюємо розміри, згідно розмірів вікна
                 if (UpdateSize())
                 {
                     // якщо була зміна розміру
-                    lock (block)
+                    lock (blockConsole)
                     {
                         // очистка - убирає артефакти після зміни розмірів екрану
                         Console.Clear();
@@ -116,7 +126,7 @@ namespace LesApp1
                     UpdateCounter();
                 }
 
-                lock (block)
+                lock (blockConsole)
                 {
                     // пробіжка по всьому слову
                     for (int i = 0; i < word.Length; i++)
@@ -130,7 +140,7 @@ namespace LesApp1
                             try
                             {
                                 Console.SetCursorPosition(col, j);
-                                // вимкнення курсора
+                                // вимкнення курсора, якщо ставити вище, то непрацює
                                 Console.CursorVisible = false;
                                 Console.Write(word[i]);
                             }
@@ -147,27 +157,34 @@ namespace LesApp1
                 }
                 Thread.Sleep(75);
 
-                // якщо дойшов до кінця і повністю сховався то вбиваємо потік
-                if (counter.Last().LastValue > rowM)
+                // зміна слова
+                ChangeWord();
+
+                // якщо дійшов до половини екрану, видаляємо із колекції,
+                // що дасть змогу запстити ще один потік в цій колонці
+                if (counter.Last().LastValue > rowM / 4)
                 {
                     // блокуємо колекцію і видаляємо номер
-                    lock (block)
+                    lock (blockConsole)
                     {
                         // чистимо місце в списку
                         list.Remove(col);
                     }
+                }
 
+
+                // якщо дойшов до кінця і повністю сховався то вбиваємо потік
+                if (counter.Last().LastValue > rowM)
+                {
                     // зупиняємо потік
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
 
                     // вбиваємо потік - що і буде варіантом виходу
                     Thread.CurrentThread.Abort();
                 }
-
-
             }
 
-            // налаштування величини тыл лічильників слова
+            // налаштування величини лічильників слова
             void UpdateCounter()
             {
                 for (int i = 0; i < counter.Length; i++)
@@ -175,6 +192,22 @@ namespace LesApp1
                     // установка початкових значень лічильника (-1 для рядків, бо уходить за межі і губиться одна буква)
                     counter[i].MaxSize = rowM + word.Length;
                 }
+            }
+
+            // зміна літер в слові
+            void ChangeWord()
+            {
+                var s = new StringBuilder();
+
+                lock (blockRandom)
+                {
+                    for (int i = 0; i < word.Length - 1; i++)
+                    {
+                        s.Append(matrix[rnd.Next(0, matrix.Length)]);
+                    }
+                }
+
+                word = s.Append(" ").ToString();
             }
         }
 

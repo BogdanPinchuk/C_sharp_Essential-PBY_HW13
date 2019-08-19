@@ -12,7 +12,7 @@ namespace LesApp0
     public class ChangeColor
     {
         // для рандомного вибору кольору
-        private static Random rnd = new Random();
+        private static readonly Random rnd = new Random();
 
         /// <summary>
         /// Вибір випадвого кольору окрім уже вибраних

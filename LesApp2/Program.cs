@@ -5,9 +5,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-// Просто для себе, зі зміною розміру і букв - LesApp2
+// Змінювати значення під час падіння? Якось не дуже то логічно,
+// але раз треба значить треба.
 
-namespace LesApp1
+namespace LesApp2
 {
     class Program
     {
@@ -20,19 +21,9 @@ namespace LesApp1
         /// </summary>
         private static int colM = Console.WindowWidth;
         /// <summary>
-        ///  Масив даних для виведення цілими словами
+        /// Набір даних
         /// </summary>
-        private static readonly string[] arrayI = new string[]
-        {
-            "Matrix",
-            "Pinchuk",
-            "Bohdan",
-            "Yuriyovych"
-        };
-        /// <summary>
-        /// Матриця
-        /// </summary>
-        private static readonly string matrix = "Matrix";
+        private static readonly string matrix = "0123456789AEIOUYBCDFGHJKLMNPQRSTVWXZ@#$%&";
         /// <summary>
         /// Випадкові значення
         /// </summary>
@@ -40,7 +31,12 @@ namespace LesApp1
         /// <summary>
         /// Блокування консолі
         /// </summary>
-        public static readonly object block = new object();
+        public static readonly object blockConsole = new object();
+        /// <summary>
+        /// Блокування рандому, якщо не поставити блокування, 
+        /// то через короткий час почнуть падати лише нулі і слова мінімального розміру
+        /// </summary>
+        public static readonly object blockRandom = new object();
         /// <summary>
         /// створення колекції 
         /// </summary>
@@ -49,32 +45,39 @@ namespace LesApp1
         static void Main()
         {
             // Заголовок
-            Console.Title = "Matrix - developed by Pinchuk Bogdan";
+            Console.Title = "Matrix";
 
             // Join Unicode
             Console.OutputEncoding = Encoding.Unicode;
 
-            // устновка розмірів консолі
-#if false
-            Console.SetWindowSize(50, 30); //150 30
-            rowM = Console.WindowHeight;
-            colM = Console.WindowWidth; 
-#endif
             // безкінечний цикл із первіркою потоків
             while (true)
             {
                 // перевіряємо чи не зайняті всі стовбці + обмежуємо їх кількість 
                 if (list.Count < colM)
                 {
+                    // для економыъ ресурсів
+                    var s = new StringBuilder();
+
+                    // величина кодового виразу
+                    lock (blockRandom)
+                    {
+                        int length = rnd.Next(3, 13);
+                        for (int i = 0; i < length; i++)
+                        {
+                            s.Append(matrix[rnd.Next(0, matrix.Length)]);
+                        }
+                    }
+
                     // створення потоків і запуск
-                    new Thread(() => RainWords(arrayI[rnd.Next(0, arrayI.Length)], ChangeValue.RandomValue(0, colM, ref list))).Start();
+                    new Thread(() => RainWords(s.ToString(), ChangeValue.RandomValue(0, colM, ref list))).Start();
                     Thread.Sleep(100);
                 }
                 // оновлюємо розміри, згідно розмірів вікна
                 if (UpdateSize())
                 {
                     // якщо була зміна розміру
-                    lock (block)
+                    lock (blockConsole)
                     {
                         // очистка - убирає артефакти після зміни розмірів екрану
                         Console.Clear();
@@ -116,7 +119,7 @@ namespace LesApp1
                     UpdateCounter();
                 }
 
-                lock (block)
+                lock (blockConsole)
                 {
                     // пробіжка по всьому слову
                     for (int i = 0; i < word.Length; i++)
@@ -130,7 +133,7 @@ namespace LesApp1
                             try
                             {
                                 Console.SetCursorPosition(col, j);
-                                // вимкнення курсора
+                                // вимкнення курсора, якщо ставити вище, то непрацює
                                 Console.CursorVisible = false;
                                 Console.Write(word[i]);
                             }
@@ -147,27 +150,28 @@ namespace LesApp1
                 }
                 Thread.Sleep(75);
 
+                // зміна слова
+                ChangeWord();
+
                 // якщо дойшов до кінця і повністю сховався то вбиваємо потік
                 if (counter.Last().LastValue > rowM)
                 {
                     // блокуємо колекцію і видаляємо номер
-                    lock (block)
+                    lock (blockConsole)
                     {
                         // чистимо місце в списку
                         list.Remove(col);
                     }
 
                     // зупиняємо потік
-                    Thread.Sleep(500);
+                    Thread.Sleep(1000);
 
                     // вбиваємо потік - що і буде варіантом виходу
                     Thread.CurrentThread.Abort();
                 }
-
-
             }
 
-            // налаштування величини тыл лічильників слова
+            // налаштування величини лічильників слова
             void UpdateCounter()
             {
                 for (int i = 0; i < counter.Length; i++)
@@ -175,6 +179,22 @@ namespace LesApp1
                     // установка початкових значень лічильника (-1 для рядків, бо уходить за межі і губиться одна буква)
                     counter[i].MaxSize = rowM + word.Length;
                 }
+            }
+
+            // зміна літер в слові
+            void ChangeWord()
+            {
+                var s = new StringBuilder();
+
+                lock (blockRandom)
+                {
+                    for (int i = 0; i < word.Length - 1; i++)
+                    {
+                        s.Append(matrix[rnd.Next(0, matrix.Length)]);
+                    }
+                }
+
+                word = s.Append(" ").ToString();
             }
         }
 

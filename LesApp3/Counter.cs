@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LesApp1
+namespace LesApp3
 {
     /// <summary>
     /// Циклічний лічильник
